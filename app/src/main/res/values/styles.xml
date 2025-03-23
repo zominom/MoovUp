@@ -1,0 +1,9 @@
+<resources>
+
+    <style name="MainActivityTheme.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#9E5C5B</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/icon</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault</item>
+        <item name="android:windowSplashScreenAnimationDuration">100</item>
+    </style>
+</resources>
