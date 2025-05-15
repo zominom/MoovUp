@@ -14,12 +14,6 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
-        <activity
-            android:name=".presentation.SearchActivity"
-            android:exported="false"
-            android:label="@string/title_activity_search"
-            android:taskAffinity=""
-            android:theme="@android:style/Theme.DeviceDefault" />
 
         <service
             android:name=".complication.MainComplicationService"
@@ -54,29 +48,42 @@
         <uses-library
             android:name="com.google.android.wearable"
             android:required="true" />
+
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
 
         <activity
-            android:name=".presentation.MainActivity"
+            android:name=".presentation.ui.MainActivity"
             android:exported="true"
             android:taskAffinity=""
             android:theme="@style/MainActivityTheme.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".presentation.StopDetailsActivity"
+            android:name=".presentation.ui.StopDetailsActivity"
             android:exported="true"
-            android:taskAffinity="">
-            <intent-filter>
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:taskAffinity="" />
+        <activity
+            android:name=".presentation.ui.SearchActivity"
+            android:exported="false"
+            android:label="@string/title_activity_search"
+            android:taskAffinity="" />
+        <activity
+            android:name=".presentation.ui.RouteActivity"
+            android:exported="false"
+            android:label="@string/title_activity_route"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.DeviceDefault" />
+        <activity
+            android:name=".presentation.ui.LocationOptionsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_location_options"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.DeviceDefault" />
     </application>
 
 </manifest>

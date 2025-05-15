@@ -1,15 +1,25 @@
-package com.watch.moovup.presentation
+package com.watch.moovup.presentation.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -17,8 +27,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -26,59 +40,42 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumnDefaults
+import androidx.wear.compose.foundation.lazy.itemsIndexed
+import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
 import com.watch.moovup.R
+import com.watch.moovup.presentation.Utils
 import com.watch.moovup.presentation.api.RetrofitClient
 import com.watch.moovup.presentation.dbUtils.GtfsDatabase
+import com.watch.moovup.presentation.model.apiModels.MonitoredVehicleJourney
 import com.watch.moovup.presentation.model.apiModels.Quote
 import com.watch.moovup.presentation.model.dbModels.Route
-import com.watch.moovup.presentation.theme.MoovupTheme
+import com.watch.moovup.presentation.ui.theme.MoovupTheme
+import kotlinx.coroutines.delay
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import android.content.Intent
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.wear.compose.foundation.lazy.itemsIndexed
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import com.watch.moovup.presentation.MainActivity
-import com.watch.moovup.presentation.Utils.approximateDistanceInMeters
-import com.watch.moovup.presentation.Utils.formatTime
-import com.watch.moovup.presentation.Utils.getMinutesDifference
-import com.watch.moovup.presentation.model.apiModels.MonitoredVehicleJourney
-import kotlinx.coroutines.delay
 
 class StopDetailsActivity : ComponentActivity() {
 
     private lateinit var database: GtfsDatabase
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        database = GtfsDatabase.getInstance(this@StopDetailsActivity)
 
         val stopId = intent.getStringExtra("stopId") ?: ""
         val stopName = intent.getStringExtra("stopName") ?: ""
 
+        database = GtfsDatabase.getInstance(this@StopDetailsActivity)
+
         setContent {
-            StopDetailsScreen(stopId, stopName, onBack = { finish() })
+            StopDetailsApp(stopId, stopName, onBack = { finish() })
         }
     }
     @Composable
-    fun StopDetailsScreen(stopId: String, stopName: String, onBack: () -> Unit) {
+    fun StopDetailsApp(stopId: String, stopName: String, onBack: () -> Unit) {
         var busArrivals by remember { mutableStateOf<List<MonitoredVehicleJourney>>(emptyList()) }
         var apiError by remember { mutableStateOf<String?>(null) }
 
@@ -86,7 +83,7 @@ class StopDetailsActivity : ComponentActivity() {
 
         LaunchedEffect(key1 = stopId) {
             val apiService = RetrofitClient.create()
-            val call: Call<Quote> = apiService.getQuote("", stopId)
+            val call: Call<Quote> = apiService.getQuote(RetrofitClient.USER_ID, stopId)
             call.enqueue(object : Callback<Quote> {
                 override fun onResponse(call: Call<Quote>, response: Response<Quote>) {
                     if (response.isSuccessful) {
@@ -181,11 +178,11 @@ class StopDetailsActivity : ComponentActivity() {
                 Column(horizontalAlignment = Alignment.Start) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                    ){
+                    ) {
                         AnimatedSemiCircles(modifier = Modifier.size(20.dp))
                         Text(
                             text = busArrival.monitoredCall?.expectedArrivalTime?.let {
-                                "${getMinutesDifference(formatTime(it))}"
+                                "${Utils.getMinutesDifference(Utils.formatTime(it))}"
                             } ?: "N/A",
                             fontWeight = FontWeight.Bold,
                             color = if (busArrival.vehicleLocation != null) Color.Green else Color.White
@@ -196,7 +193,7 @@ class StopDetailsActivity : ComponentActivity() {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).padding(start = 7.dp),
                 ) {
                     Text(
                         text = busLine?.routeShortName ?: "N/A",
@@ -205,7 +202,7 @@ class StopDetailsActivity : ComponentActivity() {
                     )
                     Text(
                         text = busLine?.routeLongName?.replace("<->", "\n") ?: "N/A",
-                        fontSize = 10.sp,
+                        fontSize = 8.sp,
                         color = Color.Yellow
                     )
                 }
@@ -246,29 +243,38 @@ class StopDetailsActivity : ComponentActivity() {
             scale1.animateTo(
                 targetValue = 1.2f,
                 animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = animationDuration, easing = FastOutSlowInEasing),
+                    animation = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    ),
                     repeatMode = RepeatMode.Reverse
                 )
             )
         }
         LaunchedEffect(key1 = Unit) {
             // Second circle animation
-            delay(initialDelay + animationDuration/3)
+            delay(initialDelay + animationDuration / 3)
             scale2.animateTo(
                 targetValue = 1.2f,
                 animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = animationDuration, easing = FastOutSlowInEasing),
+                    animation = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    ),
                     repeatMode = RepeatMode.Reverse
                 )
             )
         }
         LaunchedEffect(key1 = Unit) {
             // third circle animation
-            delay(initialDelay + (animationDuration*2)/3)
+            delay(initialDelay + (animationDuration * 2) / 3)
             scale3.animateTo(
                 targetValue = 1.2f,
                 animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = animationDuration, easing = FastOutSlowInEasing),
+                    animation = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    ),
                     repeatMode = RepeatMode.Reverse
                 )
             )
@@ -283,9 +289,9 @@ class StopDetailsActivity : ComponentActivity() {
                 // Calculate semi-circle size and position based on available space
                 val canvasWidth = size.width
                 val canvasHeight = size.height
-                val radius = (canvasWidth/2)
-                val center = Offset(canvasWidth / 2, canvasHeight/2)
-                val strokeWidth = radius/20
+                val radius = (canvasWidth / 2)
+                val center = Offset(canvasWidth / 2, canvasHeight / 2)
+                val strokeWidth = radius / 20
                 val sweepAngle = 180f // Semi-circle
                 // Draw the three semi-circles
                 drawArc(
@@ -293,7 +299,10 @@ class StopDetailsActivity : ComponentActivity() {
                     startAngle = 180f,
                     sweepAngle = sweepAngle,
                     useCenter = false,
-                    topLeft = Offset(center.x - (radius*scale3.value) , center.y - (radius*scale3.value)),
+                    topLeft = Offset(
+                        center.x - (radius * scale3.value),
+                        center.y - (radius * scale3.value)
+                    ),
                     size = Size(radius * scale3.value * 2, radius * scale3.value * 2),
                     style = Stroke(width = strokeWidth)
                 )
@@ -302,7 +311,10 @@ class StopDetailsActivity : ComponentActivity() {
                     startAngle = 180f,
                     sweepAngle = sweepAngle,
                     useCenter = false,
-                    topLeft = Offset(center.x - (radius * scale2.value * 0.8f), center.y - (radius * scale2.value * 0.8f)),
+                    topLeft = Offset(
+                        center.x - (radius * scale2.value * 0.8f),
+                        center.y - (radius * scale2.value * 0.8f)
+                    ),
                     size = Size(radius * scale2.value * 2 * 0.8f, radius * scale2.value * 2 * 0.8f),
                     style = Stroke(width = strokeWidth)
                 )
@@ -312,7 +324,10 @@ class StopDetailsActivity : ComponentActivity() {
                     startAngle = 180f,
                     sweepAngle = sweepAngle,
                     useCenter = false,
-                    topLeft = Offset(center.x - (radius * scale1.value * 0.6f), center.y - (radius * scale1.value * 0.6f)),
+                    topLeft = Offset(
+                        center.x - (radius * scale1.value * 0.6f),
+                        center.y - (radius * scale1.value * 0.6f)
+                    ),
                     size = Size(radius * scale1.value * 2 * 0.6f, radius * scale1.value * 2 * 0.6f),
                     style = Stroke(width = strokeWidth)
                 )
